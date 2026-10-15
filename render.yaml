@@ -1,0 +1,33 @@
+# Fichier d'Infrastructure as Code (Blueprint) pour Render.com
+# À placer à la racine du projet : render.yaml
+
+databases:
+  - name: flowboard-db
+    databaseName: flowboard_production
+    user: flowboard_user
+    plan: free
+    region: frankfurt
+
+services:
+  - type: web
+    name: flowboard-web
+    runtime: ruby
+    plan: free
+    region: frankfurt
+    # Installation des gems, précompilation des assets et migration de la base de données
+    buildCommand: "bundle install && bundle exec rails assets:precompile && bundle exec rails assets:clean && bundle exec rails db:migrate"
+    # Démarrage du serveur Puma via Rails
+    startCommand: "bundle exec puma -C config/puma.rb"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: flowboard-db
+          property: connectionString
+      - key: RAILS_MASTER_KEY
+        sync: false
+      - key: RAILS_SERVE_STATIC_FILES
+        value: "true"
+      - key: RAILS_LOG_TO_STDOUT
+        value: "true"
+      - key: WEB_CONCURRENCY
+        value: "2"
